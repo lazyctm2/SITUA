@@ -6,4 +6,4 @@ staticSites:
     publishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: "https://walking-alerts-backend.onrender.com"
+        value: "https://situa.onrender.com"
