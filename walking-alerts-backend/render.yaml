@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: walking-alerts-backend
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: DB_SSL
+        value: "true"

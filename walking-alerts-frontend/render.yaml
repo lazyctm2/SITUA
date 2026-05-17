@@ -1,0 +1,9 @@
+staticSites:
+  - name: walking-alerts-frontend
+    env: node
+    branch: main
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: "https://walking-alerts-backend.onrender.com"
