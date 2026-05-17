@@ -152,6 +152,11 @@ io.on("connection", socket => {
   console.log("Dispositivo conectado:", socket.id);
 });
 
+/* 🔹 HEALTHCHECK / RAÍZ */
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "Walking Alerts backend", uptime_seconds: process.uptime() });
+});
+
 /* 🔹 INICIAR SERVIDOR */
 server.listen(3000, () => {
   console.log("Backend activo en https://0.0.0.0:3000");
