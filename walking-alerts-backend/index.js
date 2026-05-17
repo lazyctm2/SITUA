@@ -158,6 +158,18 @@ app.get("/", (req, res) => {
 });
 
 /* 🔹 INICIAR SERVIDOR */
-server.listen(3000, () => {
-  console.log("Backend activo en https://0.0.0.0:3000");
-});
+async function startServer() {
+  try {
+    // Test DB connection before starting
+    await pool.query('SELECT 1')
+    console.log('Database connection OK')
+  } catch (err) {
+    console.error('Database connection error on startup:', err.message || err)
+  }
+
+  server.listen(port, () => {
+    console.log(`Backend activo en http://0.0.0.0:${port}`);
+  });
+}
+
+startServer()
