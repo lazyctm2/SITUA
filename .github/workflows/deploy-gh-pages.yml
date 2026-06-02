@@ -8,10 +8,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -22,21 +18,21 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies and build frontend
+      - name: Install dependencies
+        working-directory: walking-alerts-frontend
+        run: npm install
+
+      - name: Build frontend
         working-directory: walking-alerts-frontend
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        run: |
-          npm install
-          npm run build
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: walking-alerts-frontend/dist
+        run: npm run build
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: walking-alerts-frontend/dist
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
