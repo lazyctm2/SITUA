@@ -1,11 +1,11 @@
 import { io } from 'socket.io-client'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-const secureSocket = API_URL.startsWith('https://')
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const secureSocket = apiUrl.startsWith('https://')
 
-console.log('Frontend usando API_URL:', API_URL)
+console.log('Frontend usando API_URL:', apiUrl)
 
-export const API_URL = API_URL
+export const API_URL = apiUrl
 export const socket = io(API_URL, {
   secure: secureSocket,
 })
