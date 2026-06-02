@@ -24,6 +24,7 @@ if (process.env.VITE_USE_HTTPS === 'true') {
 }
 
 export default defineConfig({
+  base: './',
   plugins: [react()],
   server: {
     host: '0.0.0.0',

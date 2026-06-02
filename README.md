@@ -25,18 +25,20 @@ npm install
 npm run dev
 ```
 
-## Despliegue en Render
+## Despliegue
 
 ### Backend
-- Connect to `walking-alerts-backend` folder
+- Carpeta: `walking-alerts-backend`
 - Build: `npm install`
 - Start: `npm start`
 - Variables: `DATABASE_URL`
 
 ### Frontend
-- Connect to `walking-alerts-frontend` folder
+- Carpeta: `walking-alerts-frontend`
 - Build: `npm install && npm run build`
-- Publish: `dist`
+- Publicar: `dist`
 - Variables: `VITE_API_URL`
+
+El frontend puede desplegarse gratis en GitHub Pages con la acción de CI incluida.
 
 Ver documentación detallada en cada carpeta.
