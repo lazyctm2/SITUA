@@ -52,22 +52,55 @@ jobs:
           if [ -z "$token_to_use" ] || [ "$token_to_use" = "null" ]; then
             token_to_use="$GITHUB_TOKEN"
           fi
-          response=$(curl -s -H "Authorization: token $token_to_use" \
+          get_response=$(curl -s -w '\n%{http_code}' -H "Authorization: token $token_to_use" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/$GITHUB_REPOSITORY/pages)
-          echo "Current Pages API response:"
-          echo "$response"
-          current_branch=$(python -c "import json,sys; doc=json.load(sys.stdin); print(doc.get('source', {}).get('branch', ''))" <<<"$response")
-          current_path=$(python -c "import json,sys; doc=json.load(sys.stdin); print(doc.get('source', {}).get('path', ''))" <<<"$response")
+          page_body=$(printf '%s' "$get_response" | sed '$d')
+          page_status=$(printf '%s' "$get_response" | tail -n1)
+          echo "Pages GET status: $page_status"
+          echo "$page_body"
+          if [ "$page_status" = "401" ] || [ "$page_status" = "403" ]; then
+            echo 'Pages GET failed with PAGES_TOKEN, retrying with GITHUB_TOKEN...'
+            token_to_use="$GITHUB_TOKEN"
+            get_response=$(curl -s -w '\n%{http_code}' -H "Authorization: token $token_to_use" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/$GITHUB_REPOSITORY/pages)
+            page_body=$(printf '%s' "$get_response" | sed '$d')
+            page_status=$(printf '%s' "$get_response" | tail -n1)
+            echo "Retry Pages GET status: $page_status"
+            echo "$page_body"
+          fi
+          current_branch=$(python -c "import json,sys; doc=json.load(sys.stdin); print(doc.get('source', {}).get('branch', ''))" <<<"$page_body")
+          current_path=$(python -c "import json,sys; doc=json.load(sys.stdin); print(doc.get('source', {}).get('path', ''))" <<<"$page_body")
           echo "Current Pages source: branch=$current_branch path=$current_path"
-          if [ "$current_branch" != "gh-pages" ] || [ "$current_path" != "/" ]; then
+          if [ "$page_status" != "200" ] || [ "$current_branch" != "gh-pages" ] || [ "$current_path" != "/" ]; then
             echo 'Updating GitHub Pages source to gh-pages branch...'
-            response=$(curl -s -w '\n%{http_code}' -X PUT \
+            put_response=$(curl -s -w '\n%{http_code}' -X PUT \
               -H "Authorization: token $token_to_use" \
               -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/$GITHUB_REPOSITORY/pages \
               -d '{"source":{"branch":"gh-pages","path":"/"}}')
-            echo "$response"
+            put_body=$(printf '%s' "$put_response" | sed '$d')
+            put_status=$(printf '%s' "$put_response" | tail -n1)
+            echo "Pages PUT status: $put_status"
+            echo "$put_body"
+            if [ "$put_status" = "401" ] || [ "$put_status" = "403" ] && [ "$token_to_use" != "$GITHUB_TOKEN" ]; then
+              echo 'Pages PUT failed with PAGES_TOKEN, retrying with GITHUB_TOKEN...'
+              token_to_use="$GITHUB_TOKEN"
+              put_response=$(curl -s -w '\n%{http_code}' -X PUT \
+                -H "Authorization: token $token_to_use" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/$GITHUB_REPOSITORY/pages \
+                -d '{"source":{"branch":"gh-pages","path":"/"}}')
+              put_body=$(printf '%s' "$put_response" | sed '$d')
+              put_status=$(printf '%s' "$put_response" | tail -n1)
+              echo "Retry Pages PUT status: $put_status"
+              echo "$put_body"
+            fi
+            if [ "$put_status" != "200" ] && [ "$put_status" != "201" ]; then
+              echo "Failed to configure GitHub Pages (status $put_status)"
+              exit 1
+            fi
           else
-            echo 'GitHub Pages already set to gh-pages /'
+            echo 'GitHub Pages already configured on gh-pages /'
           fi
