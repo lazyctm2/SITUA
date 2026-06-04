@@ -48,7 +48,6 @@ jobs:
         run: |
           set -e
           echo 'Checking GitHub Pages config...'
-          # Try first with the repo PAT (PAGES_TOKEN), fallback to GITHUB_TOKEN
           token_to_use="$PAGES_TOKEN"
           if [ -z "$token_to_use" ] || [ "$token_to_use" = "null" ]; then
             token_to_use="$GITHUB_TOKEN"
@@ -58,24 +57,8 @@ jobs:
             https://api.github.com/repos/$GITHUB_REPOSITORY/pages)
           echo "Current Pages API response:"
           echo "$response"
-          current_branch=$(python - <<'PY'
-import json,sys
-try:
-    doc=json.load(sys.stdin)
-    print(doc.get('source', {}).get('branch', ''))
-except Exception:
-    sys.exit(0)
-PY
-<<<"$response")
-          current_path=$(python - <<'PY'
-import json,sys
-try:
-    doc=json.load(sys.stdin)
-    print(doc.get('source', {}).get('path', ''))
-except Exception:
-    sys.exit(0)
-PY
-<<<"$response")
+          current_branch=$(python -c "import json,sys; doc=json.load(sys.stdin); print(doc.get('source', {}).get('branch', ''))" <<<"$response")
+          current_path=$(python -c "import json,sys; doc=json.load(sys.stdin); print(doc.get('source', {}).get('path', ''))" <<<"$response")
           echo "Current Pages source: branch=$current_branch path=$current_path"
           if [ "$current_branch" != "gh-pages" ] || [ "$current_path" != "/" ]; then
             echo 'Updating GitHub Pages source to gh-pages branch...'
