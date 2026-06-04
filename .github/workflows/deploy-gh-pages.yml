@@ -44,18 +44,24 @@ jobs:
       - name: Configure GitHub Pages source
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAGES_TOKEN: ${{ secrets.PAGES_TOKEN }}
         run: |
           set -e
           echo 'Checking GitHub Pages config...'
+          # Try first with the repo PAT (PAGES_TOKEN), fallback to GITHUB_TOKEN
+          token_to_use="$PAGES_TOKEN"
+          if [ -z "$token_to_use" ] || [ "$token_to_use" = "null" ]; then
+            token_to_use="$GITHUB_TOKEN"
+          fi
           status_code=$(curl -s -o /tmp/pages.json -w '%{http_code}' \
-            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Authorization: token $token_to_use" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/$GITHUB_REPOSITORY/pages)
           echo "Current Pages status code: $status_code"
           if [ "$status_code" -eq 404 ]; then
             echo 'Creating GitHub Pages site from gh-pages branch...'
             response=$(curl -s -w '\n%{http_code}' -X POST \
-              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Authorization: token $token_to_use" \
               -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/$GITHUB_REPOSITORY/pages \
               -d '{"source":{"branch":"gh-pages","path":"/"}}')
