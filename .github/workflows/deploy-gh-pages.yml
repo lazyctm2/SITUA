@@ -53,20 +53,38 @@ jobs:
           if [ -z "$token_to_use" ] || [ "$token_to_use" = "null" ]; then
             token_to_use="$GITHUB_TOKEN"
           fi
-          status_code=$(curl -s -o /tmp/pages.json -w '%{http_code}' \
-            -H "Authorization: token $token_to_use" \
+          response=$(curl -s -H "Authorization: token $token_to_use" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/$GITHUB_REPOSITORY/pages)
-          echo "Current Pages status code: $status_code"
-          if [ "$status_code" -eq 404 ]; then
-            echo 'Creating GitHub Pages site from gh-pages branch...'
-            response=$(curl -s -w '\n%{http_code}' -X POST \
+          echo "Current Pages API response:"
+          echo "$response"
+          current_branch=$(python - <<'PY'
+import json,sys
+try:
+    doc=json.load(sys.stdin)
+    print(doc.get('source', {}).get('branch', ''))
+except Exception:
+    sys.exit(0)
+PY
+<<<"$response")
+          current_path=$(python - <<'PY'
+import json,sys
+try:
+    doc=json.load(sys.stdin)
+    print(doc.get('source', {}).get('path', ''))
+except Exception:
+    sys.exit(0)
+PY
+<<<"$response")
+          echo "Current Pages source: branch=$current_branch path=$current_path"
+          if [ "$current_branch" != "gh-pages" ] || [ "$current_path" != "/" ]; then
+            echo 'Updating GitHub Pages source to gh-pages branch...'
+            response=$(curl -s -w '\n%{http_code}' -X PUT \
               -H "Authorization: token $token_to_use" \
               -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/$GITHUB_REPOSITORY/pages \
               -d '{"source":{"branch":"gh-pages","path":"/"}}')
             echo "$response"
           else
-            echo "GitHub Pages already configured or accessible (HTTP $status_code)"
-            cat /tmp/pages.json
+            echo 'GitHub Pages already set to gh-pages /'
           fi
